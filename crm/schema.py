@@ -1,20 +1,30 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django.filter import DjangoFilterConnectionField
 from .models import Customer, Product, Order
+from .filters import CustomerFilter, ProductFilter, OrderFilter
 import re
 
 class CustomerType(DjangoObjectType):
     class Meta:
         model = Customer
-        fields = ("id", "name", "email", "phone")
+        fields = ("id", "name", "email", "phone", "created_at")
+        interfaces = (graphene.relay.Node,)
+        filterset_class = CustomerFilter
 
 class ProductType(DjangoObjectType):
     class Meta:
         model = Product
+        fields = ("id", "name", "price", "stock")
+        interfaces = (graphene.relay.Node,)
+        filterset_class = ProductFilter
 
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
+        fields = ("id", "customer", "products", "order_date", "total_amount")
+        interfaces = (graphene.relay.Node,)
+        filterset_class = OrderFilter
 
 class CreateCustomer(graphene.Mutation):
     class Arguments:
@@ -137,10 +147,9 @@ class Mutation(graphene.ObjectType):
 
 class Query(graphene.ObjectType):
     hello = graphene.String(default_value="Hello, GraphQL!")
-    all_customers = graphene.List(CustomerType)
+    all_customers = DjangoFilterConnectionField(CustomerType)
+    all_products = DjangoFilterConnectionField(ProductType)
+    all_orders = DjangoFilterConnectionField(OrderType)
 
     def resolve_hello(self, info):
         return "Hello, GraphQL!"
-
-    def resolve_all_customers(self, info):
-        return Customer.objects.all()
